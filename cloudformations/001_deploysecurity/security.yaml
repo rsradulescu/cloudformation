@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Creacion de Roles - Security
+
+Parameters:
+  Environment:
+    Type: String
+  Project:
+    Type: String
+
+
+Resources:
+  DeployinfraS3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ '-', [ !Ref Project, !Ref Environment, 'deployinfra2' ] ]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: TRUE
+        BlockPublicPolicy: TRUE
+        IgnorePublicAcls: TRUE
+        RestrictPublicBuckets: TRUE
+  #################################################
+  #                                               #
+  # Roles                                         #
+  #                                               #
+  #################################################
+
+  HelloWorldRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyName: "HelloWorldPolicy"
+          PolicyDocument:
+            # This is the current version of the policy language, and you should always include a Version element
+            # and set it to 2012-10-17. Otherwise, you cannot use features such as policy variables that were
+            # introduced with this version.
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:*"
+                Resource: "*"
+
+      RoleName: !Join ["-", [!Ref Project, !Ref Environment, 'HelloWorldRole']]
+
+#################################################
+#                                               #
+# Outputs                                       #
+#                                               #
+#################################################
+
+Outputs:
+  HelloWorldRole:
+    Description: Nombre exportado del rol estandar del proyecto
+    Value: !GetAtt HelloWorldRole.Arn
+    Export:
+      Name: !Join ["-", [!Ref Project, !Ref Environment, "HelloWorldRole"]]

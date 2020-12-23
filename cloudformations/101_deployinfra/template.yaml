@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Deploy de las Lambdas, Eventos que disparan lambdas, Buckets, parametros.
+Parameters:
+  UUID:
+    Type: String
+  Project:
+    Type: String
+  Environment:
+    Type: String
+    Description: Environment
+    MinLength: '1'
+    MaxLength: '41'
+    ConstraintDescription: must contain only alphanumeric characters and _.
+  LogLevel:
+    Type: String
+    Description: log level for the debugging of the lambdas
+    MinLength: '1'
+    MaxLength: '41'
+    AllowedValues:
+      - error
+      - warn
+      - info
+      - debug
+    ConstraintDescription: "only allowed values: error, warn, info, debug"
+
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Runtime: python3.8
+    AutoPublishAlias: !Ref Environment
+    MemorySize: 128
+    Timeout: 30
+    Handler: app.run
+    Tags:
+      environment: !Ref Environment
+      project: !Join ["-", [!Ref Environment, !Ref Project]]
+    Environment:
+      Variables:
+        ENV: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+
+
+Resources:
+
+  #################################################
+  #                                               #
+  # FUNCTIONS                                      #
+  #                                               #
+  #################################################
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../functions/hello_world
+      FunctionName: !Join ['-', [!Ref Project, !Ref Environment, 'HelloWorld']]
+      AutoPublishAlias: ActiveVersion
+      Timeout: 120
+      Role:
+        Fn::ImportValue: !Join ['-', [!Ref Project, !Ref Environment, 'HelloWorldRole']]
+#      Environment:
+#        Variables:
+          #ssm_path: !Join ['', ['/', !Ref Project, '/', !Ref Environment , '/es/', !GetAtt  CePrincipalDomainParameter.Value ]]
+#          sqs_queue_url: !Ref DateIteForHistLoadSQSFifoQueue
+
